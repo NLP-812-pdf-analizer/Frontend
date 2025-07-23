@@ -22,11 +22,15 @@
         }
         #status {
             margin-top: 10px;
-            color: green;
         }
         #result {
             margin-top: 10px;
-            color: blue;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
         }
     </style>
 </head>
@@ -37,55 +41,84 @@
     <div id="status"></div>
 
     <h2>Проверка соединения с бэкендом</h2>
-    <button onclick="sendRequest()">Отправить health-запрос</button>
+    <button id="health-check-button">Отправить health-запрос</button>
     <p id="result"></p>
 
     <script>
         const fileInput = document.getElementById('file-input');
         const uploadButton = document.getElementById('upload-button');
         const statusDiv = document.getElementById('status');
+        const healthCheckButton = document.getElementById('health-check-button');
+        const resultP = document.getElementById('result');
 
-        uploadButton.addEventListener('click', async () => {
+        // !!! ВАЖНО: Замените эту строку на ваш URL от ngrok !!!
+        const API_BASE_URL = 'https://your-ngrok-url.ngrok-free.app';
+
+        // При нажатии на кнопку "Загрузить PDF", открываем диалог выбора файла
+        uploadButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Когда файл выбран, начинаем загрузку
+        fileInput.addEventListener('change', async () => {
             const file = fileInput.files[0];
             if (!file) {
-                statusDiv.textContent = 'Выберите файл!';
                 return;
             }
 
+            statusDiv.textContent = `Загрузка файла: ${file.name}...`;
+            statusDiv.className = '';
+
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('pdfFile', file);
 
             try {
-                const response = await fetch('https://your-fastapi-url.com/upload', {
+                const response = await fetch(`${API_BASE_URL}/api/graph`, {
                     method: 'POST',
                     body: formData
                 });
 
+                const result = await response.json();
+
                 if (response.ok) {
-                    const result = await response.json();
-                    statusDiv.textContent = 'Файл загружен: ' + result.message;
+                    statusDiv.textContent = 'Файл успешно загружен: ' + (result.message || JSON.stringify(result));
+                    statusDiv.className = 'success';
                 } else {
-                    statusDiv.textContent = 'Ошибка: ' + response.statusText;
+                    const errorMessage = result.detail || response.statusText;
+                    statusDiv.textContent = `Ошибка загрузки: ${errorMessage}`;
+                    statusDiv.className = 'error';
                 }
             } catch (error) {
-                statusDiv.textContent = 'Ошибка: ' + error.message;
+                statusDiv.textContent = 'Сетевая ошибка: ' + error.message;
+                statusDiv.className = 'error';
+            } finally {
+                // Сбрасываем значение инпута, чтобы можно было загрузить тот же файл снова
+                fileInput.value = '';
             }
         });
 
-        function sendRequest() {
-            fetch('http://localhost:80/api/health')
-                .then(response => {
-                    if (response.ok) {
-                        document.getElementById('result').innerText = 'ОК';
-                    } else {
-                        response.text().then(text =>
-                            document.getElementById('result').innerText = `Ошибка, не успешный ответ: code: ${response.status} text: ${text}`);
-                    }
-                })
-                .catch(error => {
-                    document.getElementById('result').innerText = `Ошибка, не удалось отправить запрос: ${error}`;
-                });
+        async function sendHealthRequest() {
+            resultP.textContent = 'Отправка запроса...';
+            resultP.className = '';
+            try {
+                // Обращаемся к эндпоинту /health
+                const response = await fetch(`${API_BASE_URL}/api/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    resultP.textContent = `Соединение успешно: ${JSON.stringify(data)}`;
+                    resultP.className = 'success';
+                } else {
+                    const text = await response.text();
+                    resultP.textContent = `Ошибка соединения: Код ${response.status}, Ответ: ${text}`;
+                    resultP.className = 'error';
+                }
+            } catch (error) {
+                resultP.textContent = `Не удалось отправить запрос: ${error}`;
+                resultP.className = 'error';
+            }
         }
+
+        healthCheckButton.addEventListener('click', sendHealthRequest);
     </script>
 </body>
 </html>
