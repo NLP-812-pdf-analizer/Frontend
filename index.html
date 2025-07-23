@@ -9,7 +9,7 @@
             display: none;
         }
         button {
-            padding: 10px 20px;
+            padding: 20px 180px;
             background-color: #007bff;
             color: white;
             border: none;
@@ -32,18 +32,23 @@
         .error {
             color: red;
         }
+        .center {
+			text-align: center;
+		}
     </style>
 </head>
 <body>
-    <h1>Загрузите PDF для обработки в ML</h1>
-    <input type="file" id="file-input" accept=".pdf">
-    <button id="upload-button">Загрузить PDF</button>
-    <div id="status"></div>
+    <div class="center">
+        <h1>Загрузите PDF для обработки в ML</h1>
+        <input type="file" id="file-input" accept=".pdf">
+        <button id="upload-button">Загрузить PDF</button>
+        <div id="status"></div>
 
-    <h2>Проверка соединения с бэкендом</h2>
-    <button id="health-check-button">Отправить health-запрос</button>
-    <p id="result"></p>
-
+        <h2>Проверка соединения с бэкендом</h2>
+        <button id="health-check-button">Отправить health-запрос</button>
+        <p id="result"></p>
+    </div>
+        
     <script>
         const fileInput = document.getElementById('file-input');
         const uploadButton = document.getElementById('upload-button');
